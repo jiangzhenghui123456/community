@@ -13,4 +13,10 @@ public class AlphaController {
     public String sayHello() {
         return "Hello Spring Boot.";
     }
+
+    @RequestMapping("/ceShi")
+    @ResponseBody
+    public String ceShi() {
+        return "测试第一次idea提价git";
+    }
 }
