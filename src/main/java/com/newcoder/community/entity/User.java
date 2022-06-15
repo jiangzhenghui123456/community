@@ -14,6 +14,8 @@ import java.util.Date;
 public class User {
     // id
     private int id;
+    //姓名
+    private String username;
     //密码
     private String password;
     //密码盐
