@@ -9,8 +9,8 @@
         ,username,password,salt,email,type,status,activation_code,header_url,create_time
     </sql>
     <sql id="insertFileds">
-        id
-        ,username,password,salt,email,type,status,activation_code,header_url,create_time
+        username
+        ,password,salt,email,type,status,activation_code,header_url,create_time
     </sql>
 
     <!--    通过Id查询User-->
@@ -25,7 +25,7 @@
         select
         <include refid="selectFileds"></include>
         from user
-        where name = #{name}
+        where username = #{name}
     </select>
     <!--    通过Email查询User-->
     <select id="selectByEmail" resultType="User">

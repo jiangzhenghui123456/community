@@ -24,7 +24,7 @@ public interface UserMapper {
     int insertUser(User user);
 
     // 根据id更新状态
-    int updateStatus(int id, int status);
+    int updateStatus(int id, String status);
 
     // 根据id更新头像
     int updateHeader(int id, int header);
