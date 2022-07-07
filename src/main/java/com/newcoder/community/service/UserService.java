@@ -1,6 +1,8 @@
 package com.newcoder.community.service;
 
+import com.newcoder.community.dao.LoginTicketMapper;
 import com.newcoder.community.dao.UserMapper;
+import com.newcoder.community.entity.LoginTicket;
 import com.newcoder.community.entity.User;
 import com.newcoder.community.util.CommunityConstant;
 import com.newcoder.community.util.CommunityUtil;
@@ -9,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -44,6 +47,9 @@ public class UserService implements CommunityConstant {
 
     @Value("${server.servlet.context-path}")
     private String contextPath;
+
+    @Autowired
+    private LoginTicketMapper loginTicketMapper;
 
     public User findUserById(int id) {
         return userMapper.selectById(id);
@@ -108,6 +114,13 @@ public class UserService implements CommunityConstant {
         return map;
     }
 
+    /**
+     * 激活码判断
+     *
+     * @param userId
+     * @param code
+     * @return
+     */
     public int activation(int userId, String code) {
         User user = userMapper.selectById(userId);
         if (user.getStatus().equals("1")) {
@@ -118,5 +131,64 @@ public class UserService implements CommunityConstant {
         } else {
             return ACTIVATION_FAIL;
         }
+    }
+
+
+    /**
+     * 登录校验
+     */
+    public Map<String, Object> login(String username, String password, int expiredSeconds) {
+        HashMap<String, Object> map = new HashMap<>();
+
+        // 空值处理
+        if (StringUtils.isBlank(username)) {
+            map.put("usernameMsg", "账号不能为空!");
+            return map;
+        }
+        if (StringUtils.isBlank(password)) {
+            map.put("passwoMsg", "密码不能为空!");
+            return map;
+        }
+
+        // 验证账号
+        // 通过用户名查找用户
+        User user = userMapper.selectByName(username);
+        if (user == null) {
+            map.put("usernameMsg", "该账号不存在!");
+            return map;
+        }
+        //  验证状态
+        if ("0".equals(user.getStatus())) {
+            map.put("usernameMsg", "该账户未激活");
+            return map;
+        }
+        // 验证密码
+        password = CommunityUtil.md5(password + user.getSalt());
+
+        if (!password.equals(user.getPassword())) {
+            map.put("passwordMsg", "密码不正确!");
+            return map;
+        }
+
+        /**
+         * 到这说明校验全都通过
+         */
+        // 生成登录凭证
+        LoginTicket loginTicket = new LoginTicket();
+        loginTicket.setUserId(user.getId());
+        loginTicket.setTicket(CommunityUtil.generateUUID());
+        // 状态为0代表已登录
+        loginTicket.setStatus(0);
+        // 代表过期时间为现在之后的expiredSeconnds秒
+        loginTicket.setExpired(new Date(System.currentTimeMillis() + expiredSeconds * 1000));
+        loginTicketMapper.innsertLoginTicket(loginTicket);
+
+        // 凭证名称返回
+        map.put("ticket", loginTicket.getTicket());
+        return map;
+    }
+
+    public void logout(String ticket) {
+        loginTicketMapper.updateStatus(ticket, "1");
     }
 }
